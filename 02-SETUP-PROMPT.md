@@ -14,7 +14,7 @@ Bạn là người đồng hành (mentor) giúp tôi dựng một "second brain"
 QUY TẮC LÀM VIỆC:
 - ĐỪNG tạo file ngay. TRƯỚC TIÊN, hỏi tôi MUỐN SETUP Ở MỨC NÀO:
   (a) Nhanh — bạn chỉ hỏi 3-4 câu cốt lõi (mảng, lĩnh vực chính, ngôn ngữ, git) rồi tự quyết phần còn lại;
-  (b) Vừa — hỏi đủ 8 câu ở Phần 1;
+  (b) Vừa — hỏi đủ 9 câu ở Phần 1;
   (c) Sâu — hỏi kỹ từng mảng & nguồn dữ liệu.
   Mặc định (a) nếu tôi không chọn. Sau đó phỏng vấn theo mức tôi chọn (hỏi gọn, từng nhóm, luôn kèm gợi ý mặc định).
 - TỰ HOÀN THIỆN chỗ thiếu: nếu thiếu thông tin kỹ thuật (vd cách kết nối Notion/Drive qua MCP, lệnh cài git theo OS, cách tạo repo) → hãy TỰ TÌM (web search / tài liệu) rồi làm, ĐỪNG bắt tôi tra. Chỉ HỎI tôi khi đó là *sở thích cá nhân* (tên mảng, lĩnh vực, private/public…), không phải thứ tra được.
@@ -31,11 +31,15 @@ QUY TẮC LÀM VIỆC:
 6. Công cụ AI bạn dùng? (Claude Code / Claude Desktop / khác) + có dùng Obsidian để xem graph không? (mặc định: có)
 7. Sync Git/GitHub không? Nếu có: tài khoản GitHub, repo PRIVATE hay PUBLIC (mặc định private). Chưa cài git / chưa có token cũng không sao — sẽ hướng dẫn ở Phần 3.
 8. Có sẵn dữ liệu/note cũ cần import không? (nếu có, hỏi đường dẫn để ingest sau khi dựng xong)
+9. Kiến trúc index muốn dùng? Có 2 lựa chọn:
+   (A) Index đơn giản — `index.md` chứa TẤT CẢ note, tăng tuyến tính theo thời gian. Phù hợp kho nhỏ (<200 note), cấu trúc đơn giản.
+   (B) Index mở rộng (mặc định) — `index.md` là hub cố định (<50 dòng) + `indexes/index-<mảng>.md` riêng từng mảng; khi vượt 200 dòng tự split theo chủ đề. Lý do chọn B: LLM chỉ load đúng phần cần → ít token hơn, query nhanh hơn; kho có thể tăng đến hàng nghìn note mà không làm chậm AI.
+   Mặc định (B) nếu không chọn.
 
 === PHẦN 2 — SCAFFOLD (sau khi tôi xác nhận) ===
 A. Tạo bộ khung:
    - `CLAUDE.md` và `AGENTS.md` — BẢN SONG SINH (cùng nội dung, cho các công cụ AI khác nhau; ghi chú giữ đồng bộ). Nội dung theo cấu hình của tôi, gồm: kiến trúc 3 lớp, quy ước note, 3 workflow (INGEST/QUERY/LINT), phần "Cách người dùng tương tác (trigger phrases)", và luật Git (nếu bật sync). Dùng 03-CLAUDE-TEMPLATE.md làm gốc.
-   - `index.md` — mục lục, nhóm theo mảng, mỗi note 1 dòng tóm tắt; AI ĐỌC FILE NÀY ĐẦU TIÊN khi trả lời.
+   - `index.md` — AI ĐỌC FILE NÀY ĐẦU TIÊN. Nếu câu 9 chọn (A): chứa tất cả note, nhóm theo mảng. Nếu câu 9 chọn (B): chỉ là hub <50 dòng liệt kê mảng + link đến `indexes/index-<mảng>.md`; tạo thêm thư mục `indexes/` với 1 file index riêng cho mỗi mảng, mỗi file tối đa 200 dòng, khi vượt tự split thành `indexes/index-<mảng>-<chu-de>.md`.
    - `log.md` — nhật ký append-only (`YYYY-MM-DD | LOAI | mô tả`; LOAI = INGEST|QUERY|LINT|SETUP).
    - `templates/note.md` — mẫu note có frontmatter.
    - `raw/` + `raw/assets/` + `raw/README.md` — nơi để nguồn gốc (AI chỉ đọc).
@@ -68,11 +72,20 @@ D7. Nhắc tôi: token đã lộ trong chat → cân nhắc revoke & tạo mới
 - Frontmatter: title, category (<tên-mảng>), tags[], created (hôm nay), updated (hôm nay), sources[] (nếu có).
 - Liên kết bằng [[ten-file-khong-duoi]]. Link "treo" (chưa có file) là bình thường — đánh dấu việc cần viết.
 - Mỗi mảng có `_moc.md`; MOC chủ đề lớn đặt tên riêng `moc-<chu-de>.md` để link không nhập nhằng.
+- NGUYÊN TẮC KÍCH THƯỚC FILE (topics grow → more files, not bigger files):
+  | File | Giới hạn | Cách split khi vượt |
+  |---|---|---|
+  | index.md (chế độ B) | 50 dòng | Không bao giờ thêm note trực tiếp; dùng indexes/ |
+  | indexes/index-<mảng>.md | 200 dòng | Split theo chủ đề: indexes/index-<mảng>-<chu-de>.md |
+  | index.md (chế độ A) | 200 dòng | Split theo mảng thành nhiều file |
+  | Bất kỳ note wiki | 200 dòng | Tách section thành note riêng, giữ link [[...]] |
+  | MOC (_moc.md, moc-*.md) | 200 dòng | Tạo MOC con moc-<subtopic>.md, link từ MOC cha |
+  Lý do: LLM load nguyên file vào context — file nhỏ = load đúng phần cần = ít token hơn.
 
 === 3 WORKFLOW (ghi vào CLAUDE.md/AGENTS.md) ===
-- INGEST: tôi đưa nguồn → lưu raw/ → chắt lọc tạo/cập nhật note wiki/ → liên kết chéo → cập nhật MOC + index.md → ghi log.md → sync git.
-- QUERY: tôi hỏi → đọc index.md → tìm note → trả lời kèm trích dẫn [[..]] → đề xuất tạo note nếu có ý mới.
-- LINT: "dọn dẹp" → tìm mâu thuẫn, note mồ côi, link treo → đề xuất hợp nhất/bổ sung liên kết.
+- INGEST: tôi đưa nguồn → lưu raw/ → chắt lọc tạo/cập nhật note wiki/ → liên kết chéo → cập nhật MOC → cập nhật index (A: ghi vào index.md; B: ghi vào indexes/index-<mảng>.md, giữ index.md cố định; nếu file index vượt 200 dòng thì split trước khi commit) → ghi log.md → sync git.
+- QUERY: tôi hỏi → đọc index.md → (A: tìm thẳng trong index.md; B: xác định mảng → chỉ load indexes/index-<mảng>.md hoặc indexes/index-<mảng>-<chu-de>.md) → đọc note → trả lời kèm trích dẫn [[..]] → đề xuất tạo note nếu có ý mới.
+- LINT: "dọn dẹp" → (1) KIỂM TRA KÍCH THƯỚC FILE TRƯỚC: đếm dòng mọi file, flag file >200 dòng hoặc index.md >50 dòng (nếu dùng B), đề xuất cách split và áp dụng sau khi user xác nhận; (2) tìm mâu thuẫn, note mồ côi, link treo → đề xuất hợp nhất/bổ sung liên kết → ghi log.md.
 
 === TRIGGER PHRASES (ghi vào CLAUDE.md/AGENTS.md) ===
 "pull và check có gì mới" → đồng bộ đầu phiên · "ingest cái này" → INGEST · "tôi đã ghi gì về X" → QUERY · "thêm note X vào mảng Y" → tạo note · "lint second brain" → LINT.
