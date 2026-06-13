@@ -42,7 +42,8 @@ A. Tạo bộ khung:
    - `index.md` — AI ĐỌC FILE NÀY ĐẦU TIÊN. Nếu câu 9 chọn (A): chứa tất cả note, nhóm theo mảng. Nếu câu 9 chọn (B): chỉ là hub <50 dòng liệt kê mảng + link đến `indexes/index-<mảng>.md`; tạo thêm thư mục `indexes/` với 1 file index riêng cho mỗi mảng, mỗi file tối đa 200 dòng, khi vượt tự split thành `indexes/index-<mảng>-<chu-de>.md`.
    - `log.md` — nhật ký append-only (`YYYY-MM-DD | LOAI | mô tả`; LOAI = INGEST|QUERY|LINT|SETUP).
    - `templates/note.md` — mẫu note có frontmatter.
-   - `raw/` + `raw/assets/` + `raw/README.md` — nơi để nguồn gốc (AI chỉ đọc).
+   - `capture/` + `capture/README.md` + `capture/template.md` — inbox zero-friction; Obsidian Web Clipper trỏ vào đây; AI không tự động xử lý, chờ lệnh.
+   - `raw/` + `raw/assets/` + `raw/README.md` — lưu trữ nguồn vĩnh viễn sau khi đã ingest (AI chỉ đọc).
    - `wiki/<mỗi-mảng>/_moc.md` — mỗi mảng 1 Map of Content (cửa ngõ).
    - `.gitignore` — bỏ qua rác (`.DS_Store`, `.~lock.*#`, file tạm, `*.env`/token); GIỮ cấu hình `.obsidian/` (trừ `workspace.json`).
    - `HUONG-DAN-SU-DUNG.md` — hướng dẫn dùng hằng ngày cho tôi (con người đọc).
@@ -82,10 +83,11 @@ D7. Nhắc tôi: token đã lộ trong chat → cân nhắc revoke & tạo mới
   | MOC (_moc.md, moc-*.md) | 200 dòng | Tạo MOC con moc-<subtopic>.md, link từ MOC cha |
   Lý do: LLM load nguyên file vào context — file nhỏ = load đúng phần cần = ít token hơn.
 
-=== 3 WORKFLOW (ghi vào CLAUDE.md/AGENTS.md) ===
-- INGEST: tôi đưa nguồn → lưu raw/ → chắt lọc tạo/cập nhật note wiki/ → liên kết chéo → cập nhật MOC → cập nhật index (A: ghi vào index.md; B: ghi vào indexes/index-<mảng>.md, giữ index.md cố định; nếu file index vượt 200 dòng thì split trước khi commit) → ghi log.md → sync git.
-- QUERY: tôi hỏi → đọc index.md → (A: tìm thẳng trong index.md; B: xác định mảng → chỉ load indexes/index-<mảng>.md hoặc indexes/index-<mảng>-<chu-de>.md) → đọc note → trả lời kèm trích dẫn [[..]] → đề xuất tạo note nếu có ý mới.
-- LINT: "dọn dẹp" → (1) KIỂM TRA KÍCH THƯỚC FILE TRƯỚC: đếm dòng mọi file, flag file >200 dòng hoặc index.md >50 dòng (nếu dùng B), đề xuất cách split và áp dụng sau khi user xác nhận; (2) tìm mâu thuẫn, note mồ côi, link treo → đề xuất hợp nhất/bổ sung liên kết → ghi log.md.
+=== 4 WORKFLOW (ghi vào CLAUDE.md/AGENTS.md) ===
+- CAPTURE (mới): không cần AI lúc capture. User thả nhanh idea/link/clip vào thư mục capture/ (dùng Obsidian Web Clipper hoặc tự tạo file dùng capture/template.md). AI chỉ hành động khi được kích hoạt xử lý: "process captures" (tất cả), "process today's captures" (hôm nay), "process [tên file]" (1 item), "process captures --auto" (tự động không hỏi). Sau khi INGEST xong 1 item → chuyển file capture sang raw/. LINT kiểm tra capture/ nếu tồn đọng >10 file thì nhắc user xử lý.
+- INGEST: trước khi ghi bất kỳ file nào → AI đề xuất 2-3 phương án routing (domain, cách chia note, ghi mới hay cập nhật note cũ) → chờ user chọn → sau đó mới thực hiện: lưu raw/ → chắt lọc wiki/ → liên kết chéo → cập nhật MOC → cập nhật index (A: ghi vào index.md; B: ghi vào indexes/index-<mảng>.md) → ghi log.md → sync git. Bỏ qua routing proposal nếu user đã chỉ rõ đích ("ingest cái này vào learning/programming") hoặc dùng --auto.
+- QUERY: tôi hỏi → đọc index.md → (A: tìm thẳng; B: xác định mảng → chỉ load indexes/index-<mảng>.md) → đọc note → trả lời kèm trích dẫn [[..]] → đề xuất tạo note nếu có ý mới.
+- LINT: (1) đếm dòng mọi file, flag >200 dòng hoặc index.md >50 dòng, đề xuất split; (2) kiểm tra capture/ — nếu >10 file unprocessed thì nhắc; (3) tìm mâu thuẫn, note mồ côi, link treo → đề xuất hợp nhất/bổ sung liên kết → ghi log.md.
 
 === TRIGGER PHRASES (ghi vào CLAUDE.md/AGENTS.md) ===
 "pull và check có gì mới" → đồng bộ đầu phiên · "ingest cái này" → INGEST · "tôi đã ghi gì về X" → QUERY · "thêm note X vào mảng Y" → tạo note · "lint second brain" → LINT.
